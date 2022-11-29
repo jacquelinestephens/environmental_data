@@ -1,0 +1,2 @@
+"0","require(palmerpenguins)"
+"0","hist(penguins$body_mass_g)"

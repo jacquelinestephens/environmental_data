@@ -1,0 +1,4 @@
+"0","hist("
+"0","penguins$flipper_length_mm,"
+"0","main = ""Histogram of Flipper Length"","
+"0","xlab = ""Flipper Length (mm)"")"

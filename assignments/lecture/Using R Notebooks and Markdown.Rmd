@@ -1,0 +1,34 @@
+---
+title: "R Markdown Documents - Part 1"
+author: "Jackie Stephens"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Markdown Documents - Part 1
+
+## Analysis of Environmental Data
+
+### Introduction
+
+**Jackie Stephens** *Environmental Conservation*
+
+### Concepts List
+
+1.  Basic R
+2.  Hypothesis-Testing
+
+Will data managment be covered? I am new to Access database and have to use it for my research (data collection and then importing to R)
+
+### Course List
+
+-   UConn Big Data for Biologists
+-   UMAss Research Concepts
+-   UMass Analysis of Environmental Data
