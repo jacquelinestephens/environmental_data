@@ -1,4 +1,288 @@
 #lab 12: Beyond the General Linear Model
+#Additive models, nonlinear least sqaures and logisitic regression
+
+#Locally Weighted Sums of Squares (LOWESS, or sometimes LOESS) is a commonly-used smoothing procedure.
+#works by fitting local weighted regressions at each value of the predictors
+#predictors with nearby values are given more weight in the model fitting procedure
+
+#using greater proportion of data = curve is smoother, takes out local details
+
+
+#Fitting a LOWESS Model
+fit_lowess_50 = loess(power~sample_size, data = sim_sample_size, span = 0.5)
+#the span argument gives you the percent of data being used (50% for this case)
+
+#use predict() to create a data.frame of new values for plotting my smoother
+newdata_sample_size = data.frame(sample_size = seq(2, 20, length.out = 100)) 
+
+plot(
+  x = newdata_sample_size$sample_size,
+  y = predict(fit_lowess_50, newdata = newdata_sample_size),
+  type = "l",
+  ylab = "Statistical Power", xlab = "Sample Size") #plot it!
+
+#see question 1 for example
+
+#Nonlinear Least Squares: Ricker Function
+
+#from lab 5
+require(here)
+dat_dispersal = read.csv(here("data", "dispersal.csv"))
+
+ricker_fun = function(x, a, b) 
+{
+  return(a * x * exp(-b * x))
+}
+
+curve(
+  ricker_fun(x, 1, 1), 
+  from = 0, to = 5, add = FALSE, 
+  main = "Ricker function: a = 1, b = 1",
+  ylab = "f(x)", xlab = "x")
+#from and to arguments tell what range of x-values
+#add=FALSE argument value creates a new plot
+
+exp_fun = function(x, a, b)
+{
+  return(a * exp(-b*x))
+}
+
+curve(
+  exp_fun(x, 0.1, 1), 
+  from = 0, to = 10, add = FALSE, 
+  main = "Exponential function: a = 1, b = 1",
+  ylab = "f(x)", xlab = "x")
+#changing a to = 0.1 instead of 1 in the prior ex
+#changed the y axis to range to 0.10
+
+plot(
+  dat_dispersal$dist.class,
+  dat_dispersal$disp.rate.ftb,
+  xlim = c(0,1500),
+  xlab = "Distance Class", 
+  ylab = "Standardized Dispersal Rate", 
+  main = "Marbled Salamander - first time breeders\n Ricker Model")
+curve( ricker_fun(x, 0.011, 0.0045), add = TRUE, 
+       lty  = 1, col= "blue")
+
+
+#Fitting a NLS model in R using nls()
+#nonlinear least squares attempts to find the parameter values of a function that 
+#minimize the sum of squared errors (residuals). unlike LR, function doesnt have to be linear in parameters
+
+fit_ricker_nls = nls(
+  disp.rate.ftb ~ ricker_fun(dist.class, a, b),
+  data = dat_dispersal,
+  start = list(b = 0, a = 1)) #use start to provide a starting parameter value from which to search for the optimal values
+summary(fit_ricker_nls)
+
+#NLS Fitting uses iterative methods to find the optimal parameter values
+#uses the current to make guesses about the next iteration
+
+#when subsequent iterations do not result in changed parameter values (within a tolerance), the algorithm terminates
+
+#the output of the model summary tells us how many iterations were needed to find the optimal parameter values
+
+#NLS is sensitive to inital guesses for parameters
+#if inital guesses are too close to true optima, algorithm can fail and return an error 
+
+#QUestion 2
+#Plotting an NLS model
+plot(
+  dat_dispersal$dist.class,
+  dat_dispersal$disp.rate.ftb,
+  xlim = c(0,1500),
+  xlab = "Distance Class", 
+  ylab = "Standardized Dispersal Rate", 
+  main = "Marbled Salamander - first time breeders",
+  pch = 16, col = "blue")
+
+
+#use the predict() with fitted nls model
+#predict() requires a data.frame that contains values of the predictor variables
+
+dist_newdata = data.frame(dist.class = seq(0, 1600, length.out = 1600))
+#first step = make data frame
+
+#next plot the lines of the model results
+
+lines(predict(fit_ricker_nls, newdata = dist_newdata)) #lines() adds to an existing plot
+
+#Adding your guess model that we fit visually (refer back to lab 5)
+
+curve( ricker_fun(x, 0.011, 0.0045), add = TRUE, 
+       lty  = 2, col= "red") #guess model we made visually
+legend("topright", legend = c("observed", "nls fit", "guess"), 
+       lty = c(NA,1,2), pch = c(16, NA, NA), 
+       col = c("blue", "black", "red")) #addition to the legend 
+
+#Logistic Regression, review of bird presence/absence in lab 3
+#hermit Warbler Presence/Absence
+require(here)
+dat_bird = read.csv(here("data", "bird.sta.csv"))
+dat_habitat = read.csv(here("data", "hab.sta.csv"))
+dat_all = merge(dat_bird, dat_habitat)#merge data files to create complete dataset
+dat_all$HEWA_pres = dat_all$HEWA > 0 #make a vector of presence/absence data for hermit warblers
+
+# Hermit warbler presence/absence
+dat_all$HEWA_pres = dat_all$HEWA > 0
+#we know group 1 models dont work for binary response variables
+# Create model fits
+fit_hewa_slope = glm(HEWA_pres ~ slope, data = dat_all, family = binomial)
+fit_hewa_ba_tot = glm(HEWA_pres ~ ba.tot, data = dat_all, family = binomial)
+fit_hewa_both_additive = glm(HEWA_pres ~ slope + ba.tot, data = dat_all, family = binomial)
+fit_hewa_both_interactive = glm(HEWA_pres ~ slope * ba.tot, data = dat_all, family = binomial)
+summary(fit_hewa_both_additive)
+
+#Plotting a fitted simple logistic model
+#use the predict() to predict response values for a given set of predictor values
+#we have to decide whether we want to predict the outcomes (P/A) or the probability of success
+#we want probability of success
+#make a dataframe that contains a sequence of new slopes
+n = 500
+
+slope_newdata = data.frame(
+  slope = seq(
+    from = min(dat_all$slope, na.rm = T),
+    to = max(dat_all$slope, na.rm = T),
+    length.out = n
+  )#used na.rm to avoid issues with missing data
+)#used the min and max from observed values of slope in original data
+
+#new dataframe for total basal area values for predictions
+ba_newdata = data.frame(ba.tot = seq(from = min(dat_all$ba.tot, na.rm = T),
+                          to = max(dat_all$ba.tot, na.rm = T),
+                          length.out = n))
+#now use predict to create model predictions
+slope_newdata$hewa_predicted = predict( fit_hewa_slope, newdata = slope_newdata,type = "response")
+#added predicted values as new columns to data frame 
+ba_newdata$hewa_predicted = predict(fit_hewa_ba_tot,newdata = ba_newdata, type = "response")
+#need to use type = "response" arguments so that the predicted values are Pr(present)
+
+#Plotting the models 1 tab
+par(mfrow = c(2, 1))
+
+# Presence/absence data, translucent points:
+plot(
+  HEWA_pres ~ slope, data = dat_all, yaxt = "n",
+  main = "HEWA Presence Related to \n Percent Slope",
+  xlab = "Percent Slope",
+  ylab = "",
+  pch = 16, cex = 1.5, col = gray(0, 0.05)
+)
+
+lines(hewa_predicted ~ slope, data = slope_newdata)
+axis(2, at = c(0, 1), las = 1, labels = c("Absent", "Present"))
+
+
+plot(
+  HEWA_pres ~ ba.tot, data = dat_all, yaxt = "n",
+  main = "HEWA Presence Related to \n Basal Area", 
+  xlab = "Basal Area",
+  ylab = "",
+  pch = 16, cex = 1.5, col = gray(0, 0.05)
+)
+
+lines(hewa_predicted ~ ba.tot, data = ba_newdata)
+axis(2, at = c(0, 1), las = 1, labels = c("Absent", "Present"))
+
+
+#Plotting Both Parameters using AIC
+AIC(
+  fit_hewa_ba_tot,
+  fit_hewa_slope,
+  fit_hewa_both_additive,
+  fit_hewa_both_interactive)
+#additive and interactive models have the lowest AIC values
+#plot the response with two parameters using 3D plot to make an interactive perspective plot
+#first set up data on which to make predictions with a data frame that includes columns for both predictors: total basal area and slope
+n = 50
+#create sequences of values for both predictors
+ba.tot = seq(
+  from = min(dat_all$ba.tot, na.rm = T),
+  to = max(dat_all$ba.tot, na.rm = T),
+  length.out = n)
+slope = seq(
+  from = min(dat_all$slope, na.rm = T),
+  to = max(dat_all$slope, na.rm = T),
+  length.out = n)
+#take advantage of the expand.grid() to make a data.frame that contains every combination of the two predictors
+new_dat_all = expand.grid(
+  ba.tot = ba.tot,
+  slope = slope)
+head(new_dat_all)
+tail(new_dat_all)
+#now use predict to make a vector of the model predictions
+new_dat_all$pred_add = predict(
+  fit_hewa_both_additive,
+  newdata = new_dat_all,
+  type = "response")
+new_dat_all$pred_int = predict(
+  fit_hewa_both_interactive,
+  newdata = new_dat_all,
+  type = "response")
+
+
+#because contour and 3D plotting methods require matrices for the data on the z axis
+z_hewa_add = matrix(
+  new_dat_all$pred_add,
+  nrow = length(ba.tot),
+  byrow = FALSE)
+z_hewa_int = matrix(
+  new_dat_all$pred_int,
+  nrow = length(ba.tot),
+  byrow = FALSE)
+
+require(rgl)
+
+rgl::persp3d(
+  x = ba.tot,
+  y = slope,
+  z = z_hewa_add,
+  col = "steelblue",
+  xlab = "Basal Area",
+  ylab = "Slope",
+  zlab = "Pr(present)",
+  alpha = 0.4)
+rglwidget()
+
+install.packages("rgl")
+require(rgl)
+persp3d(  x = ba.tot,
+          y = slope,
+          z = z_hewa_add,
+          xlab = "Basal Area", ylab = "Slope", zlab = "Pr(present)",
+          col = 'lightblue',
+          theta = 30, phi = 30, expand = .75,
+          ticktype = 'detailed')
+#saving an interactive plot using the rgl function
+require(htmlwidgets)
+saveWidget(
+  rglwidget(),
+  file = here("n_effect_size_power_sim_plot.html"),
+  selfcontained = TRUE
+)
+
+
+#Contour Plots
+par(mfrow = c(1, 2))
+contour(
+  x = ba.tot, y = slope,
+  z = z_hewa_add,
+  xlab = "Total Basal Area",
+  ylab = "Percent Slope",
+  main = "Additive")
+contour(
+  x = ba.tot,
+  y = slope,
+  z = z_hewa_int,
+  xlab = "Total Basal Area",
+  ylab = "Percent Slope",
+  main = "Interactive")
+
+
+###########################################################################################
+
 #Simulating Sample sizes: we can do the same thing for a gradient in sample sizes
 require(here)
 
@@ -77,3 +361,115 @@ legend(
 
 #Question 2
 
+
+
+
+##Terrain Plots for Question 3 - 5
+
+#species GCKI presence/absence as predicted by slope, total basal area, slope and basal area (additive), slope and basal area (interactive)
+dat_all$GCKI_pres = dat_all$GCKI > 0
+fit_gcki_slope = glm(GCKI_pres ~ slope, data = dat_all, family = binomial)
+fit_gcki_ba_tot = glm(GCKI_pres ~ ba.tot, data = dat_all, family = binomial)
+fit_gcki_both_additive = glm(GCKI_pres ~ slope + ba.tot, data = dat_all, family = binomial)
+fit_gcki_both_interactive = glm(GCKI_pres ~ slope * ba.tot, data = dat_all, family = binomial)
+
+#Question 3
+AIC(fit_gcki_ba_tot, fit_gcki_slope,
+    fit_gcki_both_additive,
+    fit_gcki_both_interactive)
+#QUestion 5
+coef(fit_gcki_both_interactive)
+summary(fit_gcki_both_interactive)
+
+
+
+#Question 6-7
+#Plotting the models 1 tab
+n = 500
+slope_newdata = data.frame(
+  slope = seq(
+    from = min(dat_all$slope, na.rm = T),
+    to = max(dat_all$slope, na.rm = T),
+    length.out = n
+  )#used na.rm to avoid issues with missing data
+)#used the min and max from observed values of slope in original data
+
+#new dataframe for total basal area values for predictions
+ba_newdata = data.frame(ba.tot = seq(from = min(dat_all$ba.tot, na.rm = T),
+                                     to = max(dat_all$ba.tot, na.rm = T),
+                                     length.out = n))
+#now use predict to create model predictions
+slope_newdata$gcki_predicted = predict( fit_gcki_slope, newdata = slope_newdata,type = "response")
+#added predicted values as new columns to data frame 
+ba_newdata$gcki_predicted = predict(fit_gcki_ba_tot,newdata = ba_newdata, type = "response")
+#need to use type = "response" arguments so that the predicted values are Pr(present)
+
+par(mfrow = c(2, 1))
+
+# Presence/absence data, translucent points:
+plot(
+  GCKI_pres ~ slope, data = dat_all, yaxt = "n",
+  main = "GCKI Presence and Absence Related to \n Percent Slope",
+  xlab = "Percent Slope",
+  ylab = "",
+  ylim = c(-0.25, 1.25),
+  pch = 16, cex = 1, col = rgb(0,0,1, alpha = 0.05)
+)
+
+lines(gcki_predicted ~ slope, data = slope_newdata)
+axis(2, at = c(0, 1), las = 1, labels = c("Absent", "Present"))
+
+
+plot(
+  GCKI_pres ~ ba.tot, data = dat_all, yaxt = "n",
+  main = "GCKI Presence and Absence Related to \n Basal Area", 
+  xlab = "Basal Area",
+  ylab = "",
+  ylim = c(-0.25, 1.25),
+  pch = 16, cex = 1, col = rgb(0,0,1, alpha = 0.05))
+
+lines(gcki_predicted ~ ba.tot, data = ba_newdata)
+axis(2, at = c(0, 1), las = 1, labels = c("Absent", "Present"))
+
+
+
+
+#Wuestion 7 with code from above lab walkthrough
+new_dat_all$pred_add = predict(
+  fit_gcki_both_additive,
+  newdata = new_dat_all,
+  type = "response")
+
+new_dat_all$pred_int = predict(
+  fit_gcki_both_interactive,
+  newdata = new_dat_all,
+  type = "response")
+
+
+#because contour and 3D plotting methods require matrices for the data on the z axis
+z_gcki_add = matrix(
+  new_dat_all$pred_add,
+  nrow = length(ba.tot),
+  byrow = FALSE)
+z_gcki_int = matrix(
+  new_dat_all$pred_int,
+  nrow = length(ba.tot),
+  byrow = FALSE)
+
+
+#Contour Plot
+
+par(mfrow = c(1, 2))
+contour(
+  x = ba.tot, y = slope,
+  z = z_gcki_add,
+  xlab = "Total Basal Area",
+  ylab = "Percent Slope",
+  main = "Additive")
+contour(
+  x = ba.tot,
+  y = slope,
+  z = z_gcki_int,
+  xlab = "Total Basal Area",
+  ylab = "Percent Slope",
+  main = "Interactive")

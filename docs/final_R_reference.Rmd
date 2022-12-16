@@ -1,0 +1,231 @@
+---
+title: "final_R_reference.Rmd"
+author: "Jackie Stephens"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# R Reference Guide {.tabset .tabset-pills}
+
+
+## Loading Data and Packages
+
+**Both the function library() and require() load a package into memory**
+library() re-loads a package
+require() checks first if it is already loaded (less time intensive)
+```{r}
+#install packages with the name of the package in quote marks if you do not already have the base package
+#install.packages("here") 
+#install.packages("palmerpenguins")
+
+require(here)
+require(palmerpenguins)
+
+```
+
+
+**2021 Ginkgo Data:** 
+```{r}
+ginkgo = read.csv(here("data","ginkgo_data_2021.csv"))
+#here() calls out where to get the file using quotation marks as well as the .csv at the end
+#read.csv() reads the file into a data.frame
+#setting it equal to ginkgo= gives the data frame a name
+```
+
+
+## Data Structure
+
+**c() combines arguments into a vector (1 dimensional data consisting of one or more elements of the same type (numbers or characters)).** 
+```{r}
+## Create a vector of numbers
+num_vec  = c(1, 4, 8, 9, 13,17)
+
+## Create a vector of characters
+char_vec = c("a", "fish", "data is cool")
+#have to put the character elements in quotation marks
+
+#both typing the name of the vector into the console as well as using the print() prints the contents
+
+num_vec
+print(num_vec)
+
+char_vec
+print(char_vec)
+```
+
+**length()**
+```{r}
+length(num_vec)#length or count of elements in the vector
+length(char_vec)#length or count of elements in the vector
+```
+
+**matrix()**
+```{r}
+#creating a matrix from the vector of numbers
+print(num_vec)
+num_vec_matrix1 = matrix(num_vec, nrow = 2, ncol = 3, 
+                         byrow = TRUE,
+                        dimnames = list(c("R1","R2"), c("C1","C2","C3")))
+num_vec_matrix2 = matrix(num_vec, nrow = 2, ncol = 3, 
+                         byrow = FALSE,
+                         dimnames = list(c("R1","R2"),c("C1","C2","C3")))
+
+print(num_vec_matrix1)
+print(num_vec_matrix2)
+#after printing both, you can see that the byrow= argument controls whether elements will be listed vertically (TRUE) or horizontally (FALSE)
+
+#dimnames = names both your rows and columns
+```
+
+**data.frame()**
+```{r}
+#creates data frames of vectors of same lengths
+num_vec1 = c(5,6,10,6,3,9,8,5)
+num_vec2 = rep(1:2, 4)#repeat 1 to 2 four times
+length(num_vec1) 
+length(num_vec2)
+data.frame(num_vec1,num_vec2)
+
+```
+
+**Examples using the Ginkgo data frame**
+```{r}
+nrow(ginkgo)#number of rows or observations
+ncol(ginkgo)#number of columns
+dim(ginkgo)#dimensions of the data frame: rows columns 
+```
+
+## Subsetting
+```{r}
+# use the $ to select a specific column of the data frame
+notch_depth = ginkgo$notch_depth
+
+#use [] to subset by position within the data frame
+
+ginkgo[1,]#calls out the entire row of the first observation
+
+ginkgo[2,3]#first number selects the row, second number selects the column
+
+ginkgo[,3]#calls out the third entire column
+
+
+#use subset() to create a data frame of just adelie species
+dat_adelie = subset(penguins, species == "Adelie")
+#subset(data frame, column name == "specific value")
+```
+
+## Numerical Data exploration
+```{r}
+#the summary() function will give you the minimum, median, mean, maximum, and 1st and 3rd quantile values of each column
+summary(ginkgo)
+#because seeds_present was a character value it counts the total FALSE and TRUEs present
+summary(penguins)
+
+#the mean() function only accepts numeric or logical values
+mean(ginkgo$max_width, na.rm = TRUE)
+mean(penguins$body_mass_g, na.rm = TRUE) #adding the na.rm = argument may be necessary if your column contains NAs
+#should missing values be removed?
+
+#the standard deviation function 
+sd(ginkgo$max_width, na.rm = TRUE)
+sd(penguins$body_mass_g,na.rm = TRUE)
+```
+
+## Graphical Data Exploration
+**Scatterplot**
+```{r}
+plot(x = ginkgo$max_depth,y = ginkgo$max_width, 
+     main = "Maximum Leaf Depth by Leaf Width In Ginkgos",
+     xlab = "Maximum Leaf Depth",
+     ylab = "Maximum Leaf Width",
+     ylim = c(10, 150),
+     xlim = c(10,150),
+     pch = 1, 
+     cex = 0.75, 
+     col = "green")
+
+#pch = 0-26 different symbols or shapes 
+#cex = number indicating the amount by which plotting text and symbols should be scaled relative to the default. 1=default, 1.5 is 50% larger, 0.5 is 50% smaller
+```
+
+**Histogram**
+```{r}
+summary(penguins$flipper_length_mm)
+
+hist(penguins$flipper_length_mm,
+     main = "Distribution of Flipper Length", 
+     xlab = "Flipper Length (mm)",
+     breaks =  10)
+```
+
+**Conditional Boxplots using the Ginkgo Data**
+```{r fig.height= 10, fig.width=10}
+par(mfrow = c(2, 2))#the c(2,2) means 2 rows of 2 columns for plots
+boxplot(ginkgo$petiole_length,
+        main = "Ginkgo Petiole Length",
+        ylab = "Petiole Length (mm)")
+boxplot(ginkgo$max_width,
+        main = "Ginkgo Max Width",
+        ylab = "Max Width (mm)")
+boxplot(ginkgo$petiole_length ~ ginkgo$seeds_present,
+        main = "Petiole Length Conditioned By \nSeed Presence",
+        xlab = "Seed Present",
+        ylab = "Max Width (mm)")
+boxplot(ginkgo$max_width ~ ginkgo$seeds_present,
+        main = "Max Width Conditioned By Seed Presence",
+        xlab = "Seed Present",
+        ylab = "Max Width (mm)")
+```
+
+## Distribution Functions
+
+The sum of all events in the sample space is 1.
+
+**Normal distribution for continuous:**
+use the term density not mass
+```{r}
+#If mean or sd are not specified they assume the default values of 0 and 1
+
+#probability density function
+#is a value of 4 or 5 more likely?
+#dnorm(x, mean = 0, sd = 1, log = FALSE)
+dnorm(5, mean = 10, sd = 2.5)
+dnorm(4, mean = 10, sd = 2.5)
+
+#cumulative density function
+#What is the prob of observing 5 or less?
+#pnorm(q, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE)
+pnorm(5, mean = 10, sd = 2.5) #prob of 5 or less
+1 - pnorm(5, mean = 10, sd = 2.5) #prob of five or more
+
+#quantile function
+#what is the 20th percentile of lengths?
+#qnorm(p, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE)
+qnorm(.2, mean = 10, sd = 2.5)
+```
+
+
+**Binomial distribution for discrete: two parameters**
+1. n: number of trials = size
+2. p: prob of success = prob
+use the term mass not density
+```{r}
+#10 plots and from earlier observations 1/4 chance of success
+
+#probability mass function
+#dbinom(x, size, prob, log = FALSE)
+#what is the prob of observing a value of exactly 4?
+dbinom(4, size =  10, prob = .25)
+
+#cumulative mass function
+#what is the prob of observing a value of 4 or less? or more?
+#pbinom(q, size, prob, lower.tail = TRUE, log.p = FALSE)
+pbinom(4, size =  10, prob = .25)
+1-pbinom(4, size =  10, prob = .25)
+
+#quantile function
+#what is the median or 50th percentile? 90th percentile?
+qbinom(0.5, size = 10, prob = .25)
+```
+
+

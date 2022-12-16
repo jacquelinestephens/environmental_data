@@ -1,0 +1,4 @@
+"0","par(mfrow = c(2, 2))#the c(2,2) means 2 rows of 2 columns for plots"
+"0","boxplot(ginkgo$petiole_length,"
+"0","        main = ""Ginkgo Petiole Length"","
+"0","        ylab = ""Petiole Length (mm)"")"

@@ -1,0 +1,4 @@
+"0","boxplot(ginkgo$max_width ~ ginkgo$seeds_present,"
+"0","        main = ""Max Width Conditioned By Seed Presence"","
+"0","        xlab = ""Seed Present"","
+"0","        ylab = ""Max Width (mm)"")"

@@ -1,0 +1,4 @@
+"0","require(here)"
+"0","delomys_dat = read.csv(here(""data"",""delomys.csv""))"
+"0",""
+"0","head(delomys_dat)#figure out what column body mass and length are"

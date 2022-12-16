@@ -1,0 +1,4 @@
+"0","boxplot(ginkgo$petiole_length ~ ginkgo$seeds_present,"
+"0","        main = ""Petiole Length Conditioned By \nSeed Presence"","
+"0","        xlab = ""Seed Present"","
+"0","        ylab = ""Max Width (mm)"")"

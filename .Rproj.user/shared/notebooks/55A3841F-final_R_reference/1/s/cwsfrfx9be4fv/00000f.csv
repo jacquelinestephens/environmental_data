@@ -1,0 +1,4 @@
+"0","ginkgo = read.csv(here(""data"",""ginkgo_data_2021.csv""))"
+"0","#here() calls out where to get the file using quotation marks as well as the .csv at the end"
+"0","#read.csv() reads the file into a data.frame"
+"0","#setting it equal to ginkgo= gives the data frame a name"

@@ -1,0 +1,7 @@
+"0","#install packages with the name of the package in quote marks if you do not already have the base package"
+"0","#install.packages(""here"") "
+"0","#install.packages(""palmerpenguins"")"
+"0",""
+"0","require(here)"
+"0","require(palmerpenguins)"
+"0",""

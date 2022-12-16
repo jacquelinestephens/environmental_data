@@ -205,6 +205,7 @@ linear_sim_fit = function(x, slope, y_int, st_dev)
 #this example simulation estimates statistical power as a function of the slope (the effect size)
 alpha = 0.05
 n_sims = 1000
+
 p_vals = numeric(n_sims)
 
 n_effect_sizes = 20
